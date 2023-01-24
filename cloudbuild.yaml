@@ -1,0 +1,16 @@
+steps:
+  - name: maven:3.3-jdk-8
+    entrypoint: mvn
+    args: ['test']
+       
+  - name: maven:3.3-jdk-8
+    entrypoint: mvn
+    args: ['package','-Dmaven.test.skip=true']
+artifacts:
+  mavenArtifacts:
+  - repository: 'https://us-west2-maven.pkg.dev/kubernetes-368314/maven-repo'
+    path: 'target'
+    artifact_id: 'spring-petclinic'
+    group_id: 'org.springframework.samples'
+    version: '2.3.1.BUILD-SNAPSHOT'
+  

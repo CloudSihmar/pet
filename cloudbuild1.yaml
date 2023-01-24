@@ -1,0 +1,10 @@
+steps:
+  - name: maven:3.3-jdk-8
+    entrypoint: mvn
+    args: ['test']       
+  - name: maven:3.3-jdk-8
+    entrypoint: mvn
+    args: ['package','-Dmaven.test.skip=true']
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', 'us-west2-docker.pkg.dev/kubernetes-368314/quickstart-docker-repo/image', '--build-arg=JAR_FILE=target/spring-petclinic', '.']
+images: ['us-west2-docker.pkg.dev/kubernetes-368314/quickstart-docker-repo/image']
