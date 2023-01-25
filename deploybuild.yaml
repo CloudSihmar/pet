@@ -1,11 +1,12 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
     args: ['build', '-t', 'us-west2-docker.pkg.dev/kubernetes-368314/quickstart-docker-repo/image', '.']
-images: ['us-west2-docker.pkg.dev/kubernetes-368314/quickstart-docker-repo/image']
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "us-west2-docker.pkg.dev/kubernetes-368314/quickstart-docker-repo/image"]
   - name: "gcr.io/cloud-builders/gke-deploy"
     args:
      - run
      - --filename=deployment.yaml
      - --image=us-west2-docker.pkg.dev/kubernetes-368314/quickstart-docker-repo/image
-     - --location=us-west2
+     - --location=us-west2-a
      - --cluster=kube
