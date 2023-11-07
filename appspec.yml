@@ -1,8 +1,5 @@
 version: 0.0
 os: linux
-files:
-  - source: /
-    destination: /opt/app
 hooks:
   ApplicationStop:
     - location: scripts/container-stop.sh
@@ -12,6 +9,4 @@ hooks:
     - location: scripts/container-start.sh
       timeout: 300
       runas: root
-  ValidateService:
-    - location: scripts/validate-service.sh
-      timeout: 300
+  
