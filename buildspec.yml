@@ -1,0 +1,23 @@
+version: 0.2
+
+env:
+  parameter-store:
+     DOCKERHUB_USERNAME: /pet/docker/username
+     DOCKERHUB_PASSWORD: /pet/docker/password
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Docker Hub...
+      - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t spring-petclinic .
+      - echo Pushing the Docker image to Docker Hub...
+      - docker tag spring-petclinic $DOCKERHUB_USERNAME/spring-petclinic:latest
+      - docker push $DOCKERHUB_USERNAME/spring-petclinic:latest
+
+artifacts:
+  files: Dockerfile
+  name: Dockerfile
