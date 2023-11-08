@@ -19,5 +19,7 @@ phases:
       - docker push $DOCKERHUB_USERNAME/spring-petclinic:latest
 
 artifacts:
-  files: Dockerfile
-  name: Dockerfile
+  files: 
+   - Dockerfile
+   - target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar
+  name: build-artifacts
