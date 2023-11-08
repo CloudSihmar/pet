@@ -22,4 +22,5 @@ artifacts:
   files: 
    - Dockerfile
    - target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar
+   - appspec.yml
   name: build-artifacts
