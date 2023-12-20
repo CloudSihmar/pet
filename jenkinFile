@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('checkout from git') {
+            steps {
+                git 'https://github.com/CloudSihmar/pet.git'
+            }
+        }
+        
+        stage('build') {
+            steps {
+                withCredentials([usernameColonPassword(credentialsId: 'dockerhub', variable: 'docker-creds'), usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
+                       
+                        // Login to Docker Hub
+                        sh "docker login -u ${dockerUsername} -p ${dockerPassword}"
+
+                        // Build and push Docker image
+                        sh "docker build -t cloudsihmar/new-pet:v1 ."
+                        sh "docker push cloudsihmar/new-pet:v1"
+                    }
+        }
+    }
+}
+}
