@@ -16,8 +16,8 @@ pipeline {
                         sh "docker login -u ${dockerUsername} -p ${dockerPassword}"
 
                         // Build and push Docker image
-                        sh "docker build -t cloudsihmar/new-pet:v1 ."
-                        sh "docker push cloudsihmar/new-pet:v1"
+                        sh "docker build -t cloudsihmar/new-pet:${BUILD_NUMBER} ."
+                        sh "docker push cloudsihmar/new-pet:${BUILD_NUMBER}"
                     }
         }
     }
