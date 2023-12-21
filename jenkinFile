@@ -2,12 +2,16 @@ pipeline {
     agent any
 
     stages {
+        
+        // Git Stage starts
         stage('checkout from git') {
             steps {
                 git 'https://github.com/CloudSihmar/pet.git'
             }
         }
-        
+       // Git stage ends
+       
+       // Build stage starts 
         stage('build') {
             steps {
                 withCredentials([usernameColonPassword(credentialsId: 'dockerhub', variable: 'docker-creds'), usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
@@ -19,14 +23,44 @@ pipeline {
                         sh "docker build -t cloudsihmar/new-pet:${BUILD_NUMBER} ."
                         sh "docker push cloudsihmar/new-pet:${BUILD_NUMBER}"
                     }
-                  }
+                    }
                       }
-
-          stage("TRIVY"){
+        // build stage ends
+        
+        
+        // Trivy scan starts
+          stage("TRIVY-IMAGE-SCAN"){
             steps{
                 sh "trivy image cloudsihmar/new-pet:${BUILD_NUMBER} > trivyimagescan.txt" 
-            }
-        }
+                 }
+                   }
+        // Trivy stage ends
+        
+        // Deployment-change starts
+          stage("Deployment-Change"){
+            steps{
+                dir('deployment-dir') {
+                git branch: 'main', url: 'https://github.com/CloudSihmar/pet-argocd-k8s.git'
+                
+                withCredentials([string(credentialsId: 'github-secret', variable: 'GIT_TOKEN')])  {
+                 sh '''
+        
+                    git config --global user.email "cloudsihmar@gmail.com"
+                    git config --global user.name "cloudsihmar"
+                    git config --global user.password "${GIT_TOKEN}"
+                    sed -i "s|image: cloudsihmar/new-pet:.*|image: cloudsihmar/new-pet:${BUILD_NUMBER}|" deployment.yaml
+                    git add deployment.yaml
+                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                    git remote set-url origin https://${GIT_TOKEN}@github.com/cloudsihmar/pet-argocd-k8s.git
+                    git push origin main
+                    ls -al
+                '''
+                                      }
+                        }
+                    }
+                 }
+                // Deployment-change ends
+                
+     }
+ }
 
-}
-}
