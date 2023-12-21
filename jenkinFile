@@ -19,7 +19,14 @@ pipeline {
                         sh "docker build -t cloudsihmar/new-pet:${BUILD_NUMBER} ."
                         sh "docker push cloudsihmar/new-pet:${BUILD_NUMBER}"
                     }
+                  }
+                      }
+
+          stage("TRIVY"){
+            steps{
+                sh "trivy image cloudsihmar/new-pet:${BUILD_NUMBER} > trivyimagescan.txt" 
+            }
         }
-    }
+
 }
 }
