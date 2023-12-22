@@ -23,7 +23,8 @@ pipeline {
                 -Dsonar.projectName=pet-clinic\\
                 -Dsonar.projectVersion=${BUILD_NUMBER} \\
                 -Dsonar.sources=src/main/java \\
-                -Dsonar.exclusions='src/main/resources/**/*.java, src/checkstyle/*'
+                -Dsonar.tests=src/test/java \\
+                -Dsonar.exclusions='src/main/resources/**/*.java,src/test/**/*.java,src/pmd/**/*,**/*.properties'
             """
        }
      }
