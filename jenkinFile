@@ -78,7 +78,7 @@ pipeline {
         // Trivy scan starts
           stage("TRIVY-IMAGE-SCAN"){
             steps{
-                sh "trivy image cloudsihmar/new-pet:${BUILD_NUMBER} > trivyimagescan.txt" 
+                sh "trivy image cloudsihmar/new-pet:${BUILD_NUMBER} --no-progress --exit-code 1 --severity HIGH,CRITICAL > trivyimagescan.txt" 
                  }
                    }
         // Trivy stage ends
