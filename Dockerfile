@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN mvn package && \
+RUN mvn clean package && \
     mv target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar /run/petclinic.jar
 
 EXPOSE 8080
