@@ -11,6 +11,45 @@ pipeline {
         }
        // Git stage ends
        
+       // Static Code Analysis starts
+       stage('Static code analysis') {
+            environment {
+               SCANNER_HOME = tool 'sonar-scanner'
+             }
+        steps {
+          withSonarQubeEnv('sonar-server') {
+         sh """${SCANNER_HOME}/bin/sonar-scanner \\
+                -Dsonar.projectKey=pet-clinic \\
+                -Dsonar.projectName=pet-clinic\\
+                -Dsonar.projectVersion=${BUILD_NUMBER} \\
+                -Dsonar.sources=src/main/java \\
+                -Dsonar.exclusions='src/main/resources/**/*.java, src/checkstyle/*'
+            """
+       }
+     }
+       }
+       
+       // Quality Gate stage starts
+       
+       stage("quality gate"){
+           steps {
+                script {
+                    waitForQualityGate abortPipeline: true, credentialsId: 'Sonar-token' 
+                }
+            } 
+        }
+       
+       // Quality Gate ends
+       
+       // Software composition analysis starts
+       
+       stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--format HTML', odcInstallation: 'Owasp dependency check'
+            }
+        }
+       //Software composition analysis ends
+       
        // Build stage starts 
         stage('build') {
             steps {
@@ -55,10 +94,10 @@ pipeline {
                     git push origin main
                     ls -al
                 '''
-                                      }
-                        }
-                    }
                  }
+                }
+                }
+                }
                 // Deployment-change ends
                 
      }
