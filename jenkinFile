@@ -2,7 +2,14 @@ pipeline {
     agent any
 
     stages {
-        
+       // clean workspace
+       stage('clean workspace'){
+            steps{
+                cleanWs()
+            }
+        }
+        // cleaning ends here
+
         // Git Stage starts
         stage('checkout from git') {
             steps {
