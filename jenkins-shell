@@ -1,4 +1,4 @@
-# Set your Docker image name and container name
+# Set your Docker image name and container name below
 IMAGE_NAME="pet:latest"
 CONTAINER_NAME="pet"
 
