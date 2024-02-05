@@ -1,0 +1,27 @@
+# Set your Docker image name and container name
+IMAGE_NAME="pet:latest"
+CONTAINER_NAME="pet"
+
+# Check if the old image exists, then remove it
+if [ "$(docker images -q $IMAGE_NAME)" ]; then
+    echo "Removing old image..."
+    docker rmi $IMAGE_NAME
+fi
+
+
+# Build Docker image
+echo "creating a new image"
+docker build -t $IMAGE_NAME .
+
+# Check if the container exists, then stop and remove it
+if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
+    echo "Stopping and removing existing container..."
+    docker stop $CONTAINER_NAME
+    docker rm $CONTAINER_NAME
+fi
+
+# Run a new container based on the created image
+echo "creating a new container"
+docker run -dt -P --name $CONTAINER_NAME $IMAGE_NAME
+
+echo "Container created and started successfully!"
