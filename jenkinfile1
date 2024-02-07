@@ -91,7 +91,7 @@ pipeline {
      // DAST scanning starts
        stage('DAST-Analysis') {
           steps {
-            sh 'docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://54.91.54.68:9090 || echo "Command 3 failed with exit code $?"'
+            sh 'docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t publicip:9090 || echo "Command 3 failed with exit code $?"'
            }
           } 
       // DAST scanning ends here
