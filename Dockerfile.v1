@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN mvn clean package
+RUN mvn package
 
 
 FROM openjdk:23-jdk-slim-bookworm
