@@ -1,4 +1,4 @@
-# Set your Docker image name and container name
+# Set your Docker image name and container name..
 IMAGE_NAME="pet"
 CONTAINER_NAME="pet"
 VERSION=${BUILD_NUMBER}
