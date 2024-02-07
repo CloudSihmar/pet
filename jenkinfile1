@@ -1,0 +1,83 @@
+pipeline {
+    agent any
+
+    stages {
+        
+        stage('clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        
+        stage('git') {
+            steps {
+                git 'https://github.com/CloudSihmar/pet.git'
+            }
+        }
+
+
+      // Software composition analysis starts 
+       stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--format HTML', odcInstallation: 'Owasp dependency check'
+            }
+        }
+       //Software composition analysis ends
+
+      // SAST starts here
+        stage('Static code analysis') {
+            environment {
+               SCANNER_HOME = tool 'scanner'
+             }
+        steps {
+          withSonarQubeEnv('sonar-server') {
+         sh """${SCANNER_HOME}/bin/sonar-scanner \\
+                -Dsonar.projectKey=cloudsihmar_pet \\
+                -Dsonar.projectName=cloudsihmar_pet\\
+                -Dsonar.projectVersion=${BUILD_NUMBER} \\
+                -Dsonar.sources=src/main/java \\
+                -Dsonar.tests=src/test/java \\
+                -Dsonar.exclusions='src/main/resources/**/*.java,src/test/**/*.java,src/pmd/**/*,**/*.properties'
+            """
+       }
+     }
+       }
+      // SAST ends here 
+
+
+        // Quality Gate stage starts (abortPipeline if true then build will fail if doent meet the criteria)
+       stage("quality gate"){
+           steps {
+                script {
+                    waitForQualityGate abortPipeline: true, credentialsId: 'sonar-secret' 
+                }
+            } 
+        }   
+       // Quality Gate ends
+       
+       
+        // Build Stage (dockerhub is the cred id and varibles created from username and password stored)
+        stage('build') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {
+                sh "docker login -u ${docker_username} -p ${docker_password}"
+
+                // Build and push Docker image
+                sh "docker build -t cloudsihmar/pet-k:${BUILD_NUMBER} ."
+                sh "docker push cloudsihmar/pet-k:${BUILD_NUMBER}"
+          }
+            }
+        }
+        // Build Stage ends here
+        
+        // Trivy scan starts (--exit-code will fail the build if there are vulneability)
+          stage("TRIVY-IMAGE-SCAN"){
+            steps{
+                sh "trivy image cloudsihmar/pet-k:${BUILD_NUMBER} --no-progress  --exit-code 1 --severity HIGH,CRITICAL > trivyimagescan.txt" 
+                 }
+                   }
+        // Trivy stage ends
+        
+        
+    }
+}
