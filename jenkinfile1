@@ -104,7 +104,7 @@ pipeline {
        stage('DAST-Analysis') {
           steps {
               script {
-                    def output = sh(script: 'docker run ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://13.233.253.183:9090 || echo "Command 3 failed with exit code $?"', returnStdout: true)
+                    def output = sh(script: 'docker run ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t public-ip:9090 || echo "Command 3 failed with exit code $?"', returnStdout: true)
                     writeFile file: 'zap_scan_output.txt', text: output
                 }
            }
