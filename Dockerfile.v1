@@ -1,0 +1,16 @@
+FROM cloudsihmar/maven:spring AS build
+
+WORKDIR /app
+
+COPY . .
+
+RUN mvn clean package
+
+
+FROM openjdk:23-jdk-slim-bookworm
+
+COPY --from=build /app/target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar /run/petclinic.jar
+
+EXPOSE 8080
+
+CMD java -jar /run/petclinic.jar
