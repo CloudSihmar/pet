@@ -84,6 +84,13 @@ pipeline {
                    }
         // Trivy stage ends
 
+      // approval stage
+       stage('approval') {
+            steps {
+                  input 'please approve to deploy a container'
+            }
+        }
+      // approval stage ends here
 
      // Deploy stage starts here
       stage('Deploy') {
