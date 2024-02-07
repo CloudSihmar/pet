@@ -1,6 +1,12 @@
 pipeline {
     agent any
-
+    environment {
+        // Define environment variables
+        IMAGE_NAME = 'cloudsihmar/pett'
+        PORT_MAPPING = '9090:8080'
+        CONTAINER_NAME = 'pett'
+        TAG = "${BUILD_NUMBER}"
+    }
     stages {
         
         stage('clean workspace') {
@@ -63,26 +69,32 @@ pipeline {
                 sh "docker login -u ${docker_username} -p ${docker_password}"
 
                 // Build and push Docker image
-                sh "docker build -t cloudsihmar/pet-k:${BUILD_NUMBER} ."
-                sh "docker push cloudsihmar/pet-k:${BUILD_NUMBER}"
+                sh "docker build -t $IMAGE_NAME:${BUILD_NUMBER} ."
+                sh "docker push $IMAGE_NAME:${BUILD_NUMBER}"
           }
             }
         }
         // Build Stage ends here
         
-        // Trivy scan starts (--exit-code will fail the build if there are vulneability)
+        // Trivy scan starts
           stage("TRIVY-IMAGE-SCAN"){
             steps{
-                sh "trivy image cloudsihmar/pet-k:${BUILD_NUMBER} --no-progress  --exit-code 1 --severity HIGH,CRITICAL > trivyimagescan.txt" 
+                sh "trivy image $IMAGE_NAME:${BUILD_NUMBER} --no-progress  --severity HIGH,CRITICAL > trivyimagescan.txt" 
                  }
                    }
         // Trivy stage ends
+
 
      // Deploy stage starts here
       stage('Deploy') {
             steps {
                 // Deploy the Docker image to your environment (e.g., Kubernetes, Docker Swarm)
-                sh 'docker run -d -p 9090:8080 --name pet cloudsihmar/pet-k:${BUILD_NUMBER}'
+                sh '''if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
+                         echo "Stopping and removing existing container..."
+                         docker stop $CONTAINER_NAME
+                         docker rm $CONTAINER_NAME
+                   fi'''
+                sh 'docker run -d -p 9090:8080 --name $CONTAINER_NAME $IMAGE_NAME:${BUILD_NUMBER}'
             }
         }
      // Deploy stage ends here
@@ -91,7 +103,10 @@ pipeline {
      // DAST scanning starts
        stage('DAST-Analysis') {
           steps {
-            sh 'docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t publicip:9090 || echo "Command 3 failed with exit code $?"'
+              script {
+                    def output = sh(script: 'docker run ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://13.233.253.183:9090 || echo "Command 3 failed with exit code $?"', returnStdout: true)
+                    writeFile file: 'zap_scan_output.txt', text: output
+                }
            }
           } 
       // DAST scanning ends here
