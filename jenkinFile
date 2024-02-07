@@ -36,7 +36,9 @@ pipeline {
        }
      }
        }
-       
+      // Static Code Analysis
+
+
        // Quality Gate stage starts
        
        stage("quality gate"){
@@ -61,10 +63,9 @@ pipeline {
        // Build stage starts 
         stage('build') {
             steps {
-                withCredentials([usernameColonPassword(credentialsId: 'dockerhub', variable: 'docker-creds'), usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
-                       
-                        // Login to Docker Hub
-                        sh "docker login -u ${dockerUsername} -p ${dockerPassword}"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {      
+                        // Login to Docker Hub , username and password are stored in jenkins credentials with dockerhub as ID.
+                        sh "docker login -u ${docker_username} -p ${docker_password}"
 
                         // Build and push Docker image
                         sh "docker build -t cloudsihmar/new-pet:${BUILD_NUMBER} ."
