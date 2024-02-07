@@ -77,7 +77,25 @@ pipeline {
                  }
                    }
         // Trivy stage ends
-        
-        
+
+     // Deploy stage starts here
+      stage('Deploy') {
+            steps {
+                // Deploy the Docker image to your environment (e.g., Kubernetes, Docker Swarm)
+                sh 'docker run -d -p 9090:8080 --name pet cloudsihmar/pet-k:${BUILD_NUMBER}'
+            }
+        }
+     // Deploy stage ends here
+
+  
+     // DAST scanning starts
+       stage('DAST-Analysis') {
+          steps {
+            sh 'docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://54.91.54.68:9090 || echo "Command 3 failed with exit code $?"'
+           }
+          } 
+      // DAST scanning ends here
+      
+      
     }
 }
