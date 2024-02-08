@@ -73,7 +73,7 @@ pipeline {
        //Software composition analysis ends
        
        
-        // Build Stage (dockerhub is the cred id and varibles created from username and password stored)
+        // Image Stage (dockerhub is the cred id and varibles created from username and password stored)
         stage('Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {
@@ -85,7 +85,7 @@ pipeline {
           }
             }
         }
-        // Build Stage ends here
+        // Image Stage ends here
         
         // Trivy scan starts
           stage("TRIVY-IMAGE-SCAN"){
