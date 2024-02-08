@@ -80,7 +80,7 @@ pipeline {
                 sh "docker login -u ${docker_username} -p ${docker_password}"
 
                 // Build and push Docker image
-                sh "docker build -t $IMAGE_NAME:${BUILD_NUMBER} -f ."
+                sh "docker build -t $IMAGE_NAME:${BUILD_NUMBER} -f Dockerfile.v3 ."
                 sh "docker push $IMAGE_NAME:${BUILD_NUMBER}"
           }
             }
