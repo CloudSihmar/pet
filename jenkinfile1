@@ -22,14 +22,6 @@ pipeline {
         }
 
 
-      // Software composition analysis starts 
-       stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--format HTML', odcInstallation: 'Owasp dependency check'
-            }
-        }
-       //Software composition analysis ends
-
       // SAST starts here
         stage('Static code analysis') {
             environment {
@@ -60,16 +52,35 @@ pipeline {
             } 
         }   
        // Quality Gate ends
+
+      // Build starts here
+       stage("maven build"){
+           steps {
+                script {
+                    sh 'mvn clean package'
+                }
+            } 
+        }   
+       // Build ends here
+
+      // Software composition analysis starts 
+       stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--format HTML --scan /target', odcInstallation: 'Owasp dependency check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+       //Software composition analysis ends
        
        
         // Build Stage (dockerhub is the cred id and varibles created from username and password stored)
-        stage('build') {
+        stage('Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {
                 sh "docker login -u ${docker_username} -p ${docker_password}"
 
                 // Build and push Docker image
-                sh "docker build -t $IMAGE_NAME:${BUILD_NUMBER} ."
+                sh "docker build -t $IMAGE_NAME:${BUILD_NUMBER} -f ."
                 sh "docker push $IMAGE_NAME:${BUILD_NUMBER}"
           }
             }
