@@ -17,7 +17,7 @@
       when: docker_status is not defined or docker_status.changed
 
     - name: Check for latest Docker version
-      command: docker version --format '{{.Server.Version}}'
+      command: docker --version
       register: docker_version
       changed_when: false
 
@@ -34,4 +34,4 @@
       debug:
         msg: "Running Docker containers:\n{{ docker_containers.stdout }}"
 
-    # Add more tasks to check other security aspects like images, network settings, etc.
+  
