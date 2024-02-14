@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    environment {
+        // Define environment variables
+        IMAGE_NAME = 'cloudsihmar/pettt'
+        PORT_MAPPING = '9090:8080'
+        CONTAINER_NAME = 'pett'
+        TAG = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        
+        stage('wp') {
+            steps {
+                cleanWs()
+            }
+        }
+        
+        stage('git clone') {
+            steps {
+                git 'https://github.com/CloudSihmar/pet.git'
+            }
+        }
+        
+        stage('build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        
+        stage('Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {
+                sh "docker login -u ${docker_username} -p ${docker_password}"
+
+                // Build and push Docker image
+                sh "docker build -t $IMAGE_NAME:${BUILD_NUMBER} -f Dockerfile.v3 ."
+                sh "docker push $IMAGE_NAME:${BUILD_NUMBER}"
+          }
+            }
+        }
+        
+        stage('deploy') {
+            steps {
+                ansiblePlaybook credentialsId: 'docker-server', disableHostKeyChecking: true, installation: 'ansible', inventory: 'dev.inv', playbook: 'deploy-docker2.yml', extras: "-e VERSION=${BUILD_NUMBER} -e IMAGE=$IMAGE_NAME", vaultTmpPath: ''
+            }
+        }
+        
+    }
+}
