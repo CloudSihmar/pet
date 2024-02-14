@@ -45,6 +45,12 @@ pipeline {
                 ansiblePlaybook credentialsId: 'docker-server', disableHostKeyChecking: true, installation: 'ansible', inventory: 'dev.inv', playbook: 'deploy-docker2.yml', extras: "-e VERSION=${BUILD_NUMBER} -e IMAGE=$IMAGE_NAME", vaultTmpPath: ''
             }
         }
+
+        stage('security-check') {
+            steps {
+                ansiblePlaybook credentialsId: 'docker-server', disableHostKeyChecking: true, installation: 'ansible', inventory: 'dev.inv', playbook: 'security-check.yml', vaultTmpPath: ''
+            }
+        }
         
     }
 }
