@@ -1,6 +1,7 @@
 ---
 - name: Security Checks for Docker Host
   hosts: dev
+  become: true
   gather_facts: true
   tasks:
     - name: Check if Docker service is running
