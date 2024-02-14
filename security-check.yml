@@ -1,0 +1,37 @@
+---
+- name: Security Checks for Docker Host
+  hosts: dev
+  gather_facts: true
+  tasks:
+    - name: Check if Docker service is running
+      systemd:
+        name: docker
+        state: started
+      register: docker_status
+      ignore_errors: true
+
+    - name: Ensure Docker service is enabled
+      systemd:
+        name: docker
+        enabled: yes
+      when: docker_status is not defined or docker_status.changed
+
+    - name: Check for latest Docker version
+      command: docker version --format '{{.Server.Version}}'
+      register: docker_version
+      changed_when: false
+
+    - name: Print Docker version
+      debug:
+        msg: "Docker version is {{ docker_version.stdout }}"
+
+    - name: Check for running Docker containers
+      command: docker ps
+      register: docker_containers
+      changed_when: false
+
+    - name: Print running Docker containers
+      debug:
+        msg: "Running Docker containers:\n{{ docker_containers.stdout }}"
+
+    # Add more tasks to check other security aspects like images, network settings, etc.
