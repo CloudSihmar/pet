@@ -148,7 +148,7 @@ Check progress under phase details tab and build logs tab
 
 ## TEST THE DOCKER IMAGE
 
-Use this link to deploy an EC2 instance with docker installed (https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://learn-cantrill-labs.s3.amazonaws.com/aws-codepipeline-catpipeline/ec2docker.yaml&stackName=DOCKER) accept all details, check the checkbox and create the stack.
+deploy an EC2 instance with docker installed and create a container using the image created.
 Wait for this to move into the `CREATE_COMPLETE` state before continuing.  
 
 Move to the EC2 Console ( https://us-east-1.console.aws.amazon.com/ec2/home?region=us-east-1#Home: )  
