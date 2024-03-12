@@ -66,7 +66,7 @@ pipeline {
       // Software composition analysis starts 
        stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--format HTML --scan /target', odcInstallation: 'Owasp dependency check'
+                dependencyCheck additionalArguments: '--format HTML --scan target/', odcInstallation: 'Owasp dependency check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
