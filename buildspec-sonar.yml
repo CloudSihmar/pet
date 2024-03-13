@@ -1,0 +1,42 @@
+version: 0.2
+
+env:
+  parameter-store:
+     DOCKERHUB_USERNAME: /pet/docker/username
+     DOCKERHUB_PASSWORD: /pet/docker/password
+     SONARQUBE_TOKEN: /pet/sonar/token
+     SONARQUBE_PROJECT_KEY: "cloudsihmar_new"
+     SONARQUBE_HOST_URL: "https://sonarcloud.io/"
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Docker Hub...
+      - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+      - apt-get update && apt-get install -y unzip
+      - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip
+      - unzip sonar-scanner-cli-4.2.0.1873-linux.zip
+      - mv sonar-scanner-4.2.0.1873-linux /opt/sonar-scanner
+      - export PATH=$PATH:/opt/sonar-scanner/bin
+      - sonar-scanner \
+                -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY \\
+                -Dsonar.projectName=new\\
+                -Dsonar.projectVersion=${BUILD_NUMBER} \\
+                -Dsonar.sources=src/main/java \\
+                -Dsonar.tests=src/test/java \\
+                -Dsonar.exclusions='src/main/resources/**/*.java,src/test/**/*.java,src/pmd/**/*,**/*.properties'
+          
+
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t spring-petclinic .
+      - echo Pushing the Docker image to Docker Hub...
+      - docker tag spring-petclinic $DOCKERHUB_USERNAME/spring-petclinic:latest
+      - docker push $DOCKERHUB_USERNAME/spring-petclinic:latest
+
+artifacts:
+  files: 
+   - Dockerfile
+   - target/spring-petclinic-2.3.1.BUILD-SNAPSHOT.jar
+   - appspec.yml
+  name: build-artifacts
