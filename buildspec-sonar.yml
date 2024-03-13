@@ -5,8 +5,8 @@ env:
      DOCKERHUB_USERNAME: /pet/docker/username
      DOCKERHUB_PASSWORD: /pet/docker/password
      SONARQUBE_TOKEN: /pet/sonar/token
-     SONARQUBE_PROJECT_KEY: "cloudsihmar_new"
-     SONARQUBE_HOST_URL: "https://sonarcloud.io/"
+     SONARQUBE_PROJECT_KEY: /pet/sonar/project-key
+     SONARQUBE_HOST_URL: /pet/sonar/url
 phases:
   pre_build:
     commands:
@@ -19,6 +19,7 @@ phases:
       - export PATH=$PATH:/opt/sonar-scanner/bin
       - sonar-scanner \
                 -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY \\
+                -Dsonar.host.url=$SONARQUBE_HOST_URL \\
                 -Dsonar.projectName=new\\
                 -Dsonar.projectVersion=${BUILD_NUMBER} \\
                 -Dsonar.sources=src/main/java \\
