@@ -6,7 +6,7 @@ pipeline {
         #git clone stage
         stage('git clone') {
             steps {
-                git 'https://github.com/CloudSihmar/spring-boot-hello-world.git'
+                git 'https://github.com/CloudSihmar/pet.git'
             }
         }
         
@@ -20,7 +20,7 @@ pipeline {
         #Create image using docker
         stage('image-creation') {
             steps {
-               sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER -f Dockerfile.v1 .'
+               sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER -f Dockerfile.v3 .'
             }
         }
 
