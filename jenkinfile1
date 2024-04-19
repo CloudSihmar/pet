@@ -88,9 +88,17 @@ pipeline {
         // Image Stage ends here
         
         // Trivy scan starts
-          stage("TRIVY-IMAGE-SCAN"){
+          stage("TRIVY-IMAGE-SCAN-JSON"){
             steps{
-                sh "trivy image $IMAGE_NAME:${BUILD_NUMBER} --no-progress  --severity HIGH,CRITICAL > trivyimagescan.txt" 
+                sh "trivy image $IMAGE_NAME:${BUILD_NUMBER} --no-progress  --format json --output result.json --severity HIGH,CRITICAL" 
+                 }
+                   }
+        // Trivy stage ends
+
+      // Trivy scan starts
+          stage("TRIVY-IMAGE-SCAN-HTML"){
+            steps{
+                sh "trivy image  $IMAGE_NAME:$BUILD_NUMBER --format template --template "@/usr/local/share/trivy/templates/html.tpl" --output result.html --severity HIGH,CRITICAL" 
                  }
                    }
         // Trivy stage ends
