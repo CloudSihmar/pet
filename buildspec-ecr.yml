@@ -23,5 +23,6 @@ artifacts:
   files: 
      - imagedefinitions.json
      - imagedefinitions-latest.json
+     - appspec-ec2.yml
 
   
