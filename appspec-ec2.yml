@@ -2,10 +2,10 @@ version: 0.0
 os: linux
 hooks:
   ApplicationStop:
-    - location: scripts/container-stop1.sh
+    - location: scripts-ec2/container-stop.sh
       timeout: 300
       runas: root
   AfterInstall:
-    - location: scripts/container-start1.sh
+    - location: scripts-ec2/container-start.sh
       timeout: 300
       runas: root
