@@ -1,0 +1,105 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define environment variables
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')  
+        GITHUB_REPO = 'https://github.com/CloudSihmar/pet.git'  
+        DOCKER_IMAGE = 'cloudsihmar/sandeep-pet:latest'  
+        TERRAFORM_DIR = 'terraform'  
+        ANSIBLE_PLAYBOOK = 'install_docker.yml' 
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Get the code from GitHub
+                git url: env.GITHUB_REPO
+            }
+        }
+
+        stage('Build with Maven') {
+            steps {
+                // Create a package using Maven
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                // Build the Docker image and push it to DockerHub
+                script {
+                    docker.withRegistry('', env.DOCKERHUB_CREDENTIALS) {
+                        def app = docker.build(env.DOCKER_IMAGE)
+                        app.push()
+                    }
+                }
+            }
+        }
+
+        stage('Create Infrastructure with Terraform') {
+            steps {
+                // Initialize and apply Terraform to create the machine
+                dir(env.TERRAFORM_DIR) {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+
+                script {
+                    // Retrieve the instance IP and private key from Terraform outputs
+                    def machineIP = sh(script: "terraform output -raw instance_ip", returnStdout: true).trim()
+                    def privateKey = sh(script: "terraform output -raw private_key_pem", returnStdout: true).trim()
+
+                    // Save the private key to a temporary file
+                    writeFile file: 'ssh_key.pem', text: privateKey
+                    sh 'chmod 600 ssh_key.pem'
+                }
+            }
+        }
+
+        stage('Install Docker using Ansible') {
+            steps {
+                script {
+                    // Get the IP of the created machine using Terraform output
+                    def machineIP = sh(script: "terraform output -raw instance_ip", returnStdout: true).trim()
+
+                    // Write the Ansible inventory file dynamically
+                    writeFile file: 'inventory.ini', text: """
+                    [docker-host]
+                    ${machineIP} ansible_user=ubuntu ansible_ssh_private_key_file=ssh_key.pem
+                    """
+
+                    // Run the Ansible playbook to install Docker
+                    sh "ansible-playbook -i inventory.ini ${env.ANSIBLE_PLAYBOOK}"
+                }
+            }
+        }
+
+        stage('Deploy Application') {
+            steps {
+                script {
+                    def machineIP = sh(script: "terraform output -raw instance_ip", returnStdout: true).trim()
+
+                    // SSH into the machine and run the Docker container with the application
+                    sh """
+                        ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@${machineIP} << EOF
+                        docker run -d -p 8080:8080 ${env.DOCKER_IMAGE}
+                        EOF
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Cleanup Terraform resources after deployment
+            dir(env.TERRAFORM_DIR) {
+                sh 'terraform destroy -auto-approve'
+            }
+
+            // Remove the private key file for security reasons
+            sh 'rm -f ssh_key.pem'
+        }
+    }
+}
