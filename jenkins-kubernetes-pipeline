@@ -1,0 +1,72 @@
+Steps to Deploy an Application to Kubernetes Using Jenkins
+1. Install Required Plugins in Jenkins
+You will need the following Jenkins plugins:
+
+Kubernetes CLI Plugin: Allows Jenkins to communicate with the Kubernetes cluster.
+
+Go to Jenkins Dashboard -> Manage Jenkins -> Manage Plugins -> Available tab.
+
+Search for the plugins mentioned above and install them.
+
+2. Upload kubeconfig File as a Secret in Jenkins:
+
+Go to Jenkins Dashboard → Manage Jenkins → Manage Credentials → (Global) → Add Credentials.
+Select "Secret file" as the credential type.
+Upload the kubeconfig file.
+Provide an ID (e.g., kubernetes-kubeconfig) and a description for this credential.
+
+3. Install kubectl in jenkins machine 
+Add /root/bin/ to Jenkins User's PATH
+You can modify the Jenkins environment to include /root/bin in the PATH. To do this:
+
+Open the Jenkins configuration file (on Ubuntu/Debian, it is usually /etc/default/jenkins):
+
+sudo nano /etc/default/jenkins
+
+ind the line starting with PATH= and append /root/bin to it. For example:
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin
+
+sudo systemctl restart jenkins
+
+Move kubectl to a Directory Accessible by Jenkins
+You can move the kubectl binary to a location that is globally accessible, such as /usr/local/bin:
+
+sudo mv /root/bin/kubectl /usr/local/bin/
+sudo chmod +x /usr/local/bin/kubectl
+
+4. Use Sudo to Allow Jenkins to Execute kubectl
+
+vi vi /etc/sudoers
+jenkins ALL=(ALL) NOPASSWD: /root/bin/kubectl
+
+
+5. Create a pipeline
+
+pipeline {
+    agent any
+    environment {
+        KUBECONFIG_SECRET_ID = 'kubernetes-kubeconfig' // ID of the kubeconfig stored as a Secret file
+    }
+
+    stages {
+        stage('Git Stage') {
+            steps {
+                git branch: 'main', url: 'https://github.com/CloudSihmar/dummy-repo.git'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: env.KUBECONFIG_SECRET_ID, variable: 'KUBECONFIG')]) {
+                    sh '''
+                        kubectl --kubeconfig=$KUBECONFIG apply -f deploy.yaml
+                    '''
+                }
+            }
+        }
+    }
+}
+
+
+
