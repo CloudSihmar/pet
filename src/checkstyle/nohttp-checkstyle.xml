@@ -4,5 +4,4 @@
 		"https://checkstyle.org/dtds/configuration_1_2.dtd">
 <module name="com.puppycrawl.tools.checkstyle.Checker">
 	<module name="io.spring.nohttp.checkstyle.check.NoHttpCheck"/>
-	<module name="NoHttp" enabled="false" />
 </module>
