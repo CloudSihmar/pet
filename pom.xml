@@ -175,7 +175,6 @@
               <sourceDirectories>${basedir}</sourceDirectories>
               <includes>**/*</includes>
               <excludes>**/.git/**/*,**/.idea/**/*,**/target/**/,**/.flattened-pom.xml,**/*.class</excludes>
-              <exclude>.scannerwork/report-task.txt</exclude>
             </configuration>
             <goals>
               <goal>check</goal>
