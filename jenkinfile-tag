@@ -1,0 +1,152 @@
+pipeline {
+    agent any
+    triggers {
+        pollSCM('') // Enabling being build on Push
+    }
+
+    environment {
+        IMAGE_NAME = 'cloudsihmar/dummy-pet'
+    }
+
+    stages {
+        
+        stage('clean ws') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        // Git Stage starts
+        stage('checkout from git') {
+            steps {
+                script {
+                    // Increase Git Buffer Size
+                    sh 'git config --global http.postBuffer 524288000'  // Increase buffer size
+
+                    // Shallow clone master branch and fetch the latest tag in the current directory
+                    sh 'git clone --depth 1 --branch master https://github.com/CloudSihmar/pet.git .'
+                    
+                    // Fetch tags to get the latest one
+                    sh 'git fetch --tags'
+                    
+                    // Get the latest tag
+                    def latestTag = sh(script: "git describe --tags \$(git rev-list --tags --max-count=1)", returnStdout: true).trim()
+                    
+                    // Print the latest tag
+                    echo "Latest Git tag: ${latestTag}"
+                    
+                    // Set it as an environment variable
+                    env.IMAGE_TAG = latestTag
+                }
+            }
+        }
+        // Git Stage ends
+
+        // Static Code Analysis starts
+        stage('Static code analysis') {
+            environment {
+                SCANNER_HOME = tool 'sonar-scanner'
+            }
+            steps {
+                withSonarQubeEnv('sonarqube-server') {
+                    sh """${SCANNER_HOME}/bin/sonar-scanner \\
+                           -Dsonar.projectKey=govtech-pet \\
+                           -Dsonar.projectName=govtech-pet \\
+                           -Dsonar.projectVersion=${BUILD_NUMBER} \\
+                           -Dsonar.skipSSLVerification=true \\
+                           -Dsonar.sources=src/main/java \\
+                           -Dsonar.tests=src/test/java \\
+                           -Dsonar.exclusions='src/main/resources/**/*.java,src/test/**/*.java,src/pmd/**/*,**/*.properties'
+                    """
+                }
+            }
+        }
+        // Static Code Analysis ends
+
+        // Quality Gate stage starts
+        stage("quality gate") {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: true, credentialsId: 'sonarqube-creds'
+                }
+            }
+        }
+        // Quality Gate ends
+
+        // Maven Build starts
+        stage("maven build"){
+            steps {
+                script {
+                    sh 'mvn clean package'
+                }
+            } 
+        }   
+        // Maven Build ends
+        
+        // Software Composition Analysis starts
+        stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--format HTML', odcInstallation: 'Dependency-Check'
+            }
+        }
+        // Software Composition Analysis ends
+
+        // Docker Build and Push starts
+        stage('build') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'docker_password', usernameVariable: 'docker_username')]) {
+                    // Login to Docker Hub
+                    sh "docker login -u ${docker_username} -p ${docker_password}"
+
+                    // Build and push Docker image using IMAGE_TAG retrieved from Git
+                    sh "docker build -t ${IMAGE_NAME}:${env.IMAGE_TAG} -f Dockerfile.v3 ."
+                    sh "docker push ${IMAGE_NAME}:${env.IMAGE_TAG}"
+                }
+            }
+        }
+        // Docker Build and Push ends
+
+        // Trivy scan starts
+        stage("TRIVY-IMAGE-SCAN"){
+            steps {
+                sh "trivy image ${IMAGE_NAME}:${env.IMAGE_TAG} --no-progress --timeout 10m --severity HIGH,CRITICAL > trivyimagescan.txt"
+            }
+        }
+        // Trivy scan ends
+
+        // Trivy scan 1 starts
+        stage("TRIVY-IMAGE-SCAN1"){
+            steps {
+                sh "trivy image ${IMAGE_NAME}:${env.IMAGE_TAG} --output result.html --severity HIGH,CRITICAL"
+            }
+        }
+        // Trivy scan 1 ends
+
+
+        // Deployment-Change starts
+        stage("Deployment-Change") {
+            steps {
+                dir('deployment-dir') {
+                    git branch: 'main', url: 'https://github.com/CloudSihmar/pet-argocd-k8s.git'
+
+                    withCredentials([string(credentialsId: 'github-secret', variable: 'GIT_TOKEN')]) {
+                        sh '''#!/bin/bash
+                            git config --global user.email "cloudsihmar@gmail.com"
+                            git config --global user.name "cloudsihmar"
+                          # Print the IMAGE_NAME and IMAGE_TAG to verify
+                            echo "IMAGE_NAME: ${IMAGE_NAME}"
+                            echo "IMAGE_TAG: ${IMAGE_TAG}"
+                            sed -i "s|image: ${IMAGE_NAME}:.*|image: ${IMAGE_NAME}:${IMAGE_TAG}|" deployment.yaml
+                            git add deployment.yaml
+                            git commit -m "Update deployment image to version ${IMAGE_TAG}"
+                            git remote set-url origin https://${GIT_TOKEN}@github.com/cloudsihmar/pet-argocd-k8s.git
+                            git push origin main
+                            ls -al
+                        '''
+                    }
+                }
+            }
+        }
+        // Deployment-Change ends
+    }
+}
